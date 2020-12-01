@@ -39,13 +39,13 @@ mod tests {
 
     #[test]
     fn should_solve_part1_example() {
-        let input = vec![1721, 979, 366, 299, 675, 1456];
+        let input = [1721, 979, 366, 299, 675, 1456];
         assert_eq!(solve_day1_part1(&input), 514579);
     }
 
     #[test]
     fn should_solve_part2_example() {
-        let input = vec![1721, 979, 366, 299, 675, 1456];
+        let input = [1721, 979, 366, 299, 675, 1456];
 
         assert_eq!(solve_day1_part2(&input), 241861950);
     }
