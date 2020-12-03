@@ -1,10 +1,10 @@
-use aoc_runner_derive::{aoc_generator, aoc};
+use aoc_runner_derive::{aoc, aoc_generator};
 
 struct PasswordEntry {
     first: usize,
     second: usize,
     letter: char,
-    password: String
+    password: String,
 }
 
 impl PasswordEntry {
@@ -25,7 +25,10 @@ fn parse_input_day2(input: &str) -> Vec<PasswordEntry> {
         .map(|l| {
             let mut split = l.split_whitespace();
             let numbers = split.next().unwrap();
-            let min_max = numbers.split('-').map(|f| f.parse::<usize>().unwrap()).collect::<Vec<_>>();
+            let min_max = numbers
+                .split('-')
+                .map(|f| f.parse::<usize>().unwrap())
+                .collect::<Vec<_>>();
             let letter = split.next().unwrap().chars().next().unwrap();
             let password = split.next().unwrap();
             PasswordEntry::new(min_max[0], min_max[1], letter, password)
@@ -35,7 +38,6 @@ fn parse_input_day2(input: &str) -> Vec<PasswordEntry> {
 
 #[aoc(day2, part1)]
 fn solve_day1_part1(input: &[PasswordEntry]) -> usize {
-
     input
         .iter()
         .filter(|i| {
@@ -69,7 +71,7 @@ mod tests {
         let input = [
             PasswordEntry::new(1, 3, 'a', "abcde"),
             PasswordEntry::new(1, 3, 'b', "cdefg"),
-            PasswordEntry::new(2, 9, 'c', "ccccccccc"), 
+            PasswordEntry::new(2, 9, 'c', "ccccccccc"),
         ];
 
         assert_eq!(solve_day1_part1(&input), 2);
@@ -80,7 +82,7 @@ mod tests {
         let input = [
             PasswordEntry::new(1, 3, 'a', "abcde"),
             PasswordEntry::new(1, 3, 'b', "cdefg"),
-            PasswordEntry::new(2, 9, 'c', "ccccccccc"), 
+            PasswordEntry::new(2, 9, 'c', "ccccccccc"),
         ];
 
         assert_eq!(solve_day1_part2(&input), 1);

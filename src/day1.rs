@@ -1,6 +1,6 @@
 use std::num::ParseIntError;
 
-use aoc_runner_derive::{aoc_generator, aoc};
+use aoc_runner_derive::{aoc, aoc_generator};
 
 #[aoc_generator(day1)]
 fn parse_input_day1(input: &str) -> Result<Vec<u32>, ParseIntError> {
@@ -12,7 +12,7 @@ fn solve_day1_part1(input: &[u32]) -> u32 {
     for i in input {
         for j in input {
             if i + j == 2020 {
-                return i * j
+                return i * j;
             }
         }
     }
