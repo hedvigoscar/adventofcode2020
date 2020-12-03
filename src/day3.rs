@@ -56,10 +56,23 @@ fn parse_day3(input: &str) -> CoordinateMap {
 
 #[aoc(day3, part1)]
 fn solve_day3_part1(input: &CoordinateMap) -> usize {
+    solve_with_slope(input, 3, 1)
+}
+
+#[aoc(day3, part2)]
+fn solve_day3_part2(input: &CoordinateMap) -> usize {
+    solve_with_slope(input, 1, 1)
+        * solve_with_slope(input, 3, 1)
+        * solve_with_slope(input, 5, 1)
+        * solve_with_slope(input, 7, 1)
+        * solve_with_slope(input, 1, 2)
+}
+
+fn solve_with_slope(input: &CoordinateMap, slope_x: usize, slope_y: usize) -> usize {
     let mut pos_x: usize = 0;
     let mut trees: usize = 0;
-    for pos_y in 1..input.size_y {
-        pos_x += 3;
+    for pos_y in (slope_y..input.size_y).step_by(slope_y) {
+        pos_x += slope_x;
         if input.get(pos_x, pos_y) == CoordinateContent::Tree {
             trees += 1;
         }
@@ -105,5 +118,12 @@ mod tests {
         let parsed_input = parse_day3(EXAMPLE_INPUT);
 
         assert_eq!(solve_day3_part1(&parsed_input), 7);
+    }
+
+    #[test]
+    fn should_solve_part2_example() {
+        let parsed_input = parse_day3(EXAMPLE_INPUT);
+
+        assert_eq!(solve_day3_part2(&parsed_input), 336);
     }
 }
