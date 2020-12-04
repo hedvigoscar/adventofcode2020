@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate lazy_static;
 use aoc_runner_derive::aoc_lib;
 mod day1;
 mod day2;
