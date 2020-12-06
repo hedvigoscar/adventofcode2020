@@ -1,4 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
+use reduce::Reduce;
 use std::collections::HashSet;
 
 #[aoc_generator(day6)]
@@ -30,6 +31,28 @@ fn solve_day6_part1(input: &[Vec<String>]) -> usize {
                 })
             });
             yes_answers.len()
+        })
+        .sum()
+}
+
+#[aoc(day6, part2)]
+fn solve_day6_part2(input: &[Vec<String>]) -> usize {
+    input
+        .iter()
+        .map(|group| {
+            group
+                .iter()
+                .map(|person_answers| {
+                    person_answers
+                        .chars()
+                        .fold(HashSet::new(), |mut acc, curr| {
+                            acc.insert(curr);
+                            acc
+                        })
+                })
+                .reduce(|a, b| a.intersection(&b).copied().collect())
+                .unwrap()
+                .len()
         })
         .sum()
 }
@@ -71,5 +94,10 @@ b";
     #[test]
     fn should_solve_part1_example() {
         assert_eq!(solve_day6_part1(&parse_day6(EXAMPLE_INPUT)), 11);
+    }
+
+    #[test]
+    fn should_solve_part2_example() {
+        assert_eq!(solve_day6_part2(&parse_day6(EXAMPLE_INPUT)), 6);
     }
 }
