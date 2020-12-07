@@ -16,6 +16,19 @@ impl Rule {
     }
 }
 
+fn contains(rules: &HashMap<String, Rule>, root: &str, target: &str) -> bool {
+    let root = rules.get(root).unwrap();
+    for child in root.contents.keys() {
+        if child == target {
+            return true;
+        }
+        if contains(rules, &child, target) {
+            return true;
+        }
+    }
+    false
+}
+
 #[derive(Debug, PartialEq)]
 struct TreeNode<T> {
     content: T,
@@ -27,25 +40,8 @@ impl<T: PartialEq> TreeNode<T> {
         Self { content, children }
     }
 
-    fn contains(&self, target: &T) -> bool {
-        for child in &self.children {
-            if child.contains_or_is(target) {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn contains_or_is(&self, target: &T) -> bool {
-        if &self.content == target {
-            return true;
-        }
-        for child in &self.children {
-            if child.contains_or_is(target) {
-                return true;
-            }
-        }
-        false
+    fn size(&self) -> usize {
+        self.children.iter().map(|c| c.size()).sum::<usize>() + 1
     }
 }
 
@@ -76,14 +72,12 @@ fn parse_day7(input: &str) -> HashMap<String, Rule> {
 #[aoc(day7, part1)]
 fn solve_day7_part1(input: &HashMap<String, Rule>) -> usize {
     input
-        .iter()
-        .map(|(_, r)| make_tree(r, input))
-        .filter(|t| t.contains(&String::from("shiny gold")))
+        .keys()
+        .filter(|t| contains(input, t, "shiny gold"))
         .count()
 }
 
 fn make_tree(rule: &Rule, rules: &HashMap<String, Rule>) -> TreeNode<String> {
-    dbg!(rule);
     let children = rule
         .contents
         .iter()
@@ -95,6 +89,13 @@ fn make_tree(rule: &Rule, rules: &HashMap<String, Rule>) -> TreeNode<String> {
         })
         .collect();
     TreeNode::new(rule.color.to_owned(), children)
+}
+
+#[aoc(day7, part2)]
+fn solve_day7_part2(input: &HashMap<String, Rule>) -> usize {
+    let tree = make_tree(input.get("shiny gold").unwrap(), input);
+
+    tree.size() - 1
 }
 
 #[cfg(test)]
@@ -129,75 +130,44 @@ dotted black bags contain no other bags.";
         )
     }
 
-    lazy_static! {
-        static ref BRIGHT_WHITE_TREE: TreeNode<String> = TreeNode::new(
-            "bright white".to_owned(),
-            vec![TreeNode::new(
-                "shiny gold".to_owned(),
-                vec![
-                    TreeNode::new(
-                        "dark olive".to_owned(),
-                        vec![
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                        ],
-                    ),
-                    TreeNode::new(
-                        "vibrant plum".to_owned(),
-                        vec![
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                        ],
-                    ),
-                    TreeNode::new(
-                        "vibrant plum".to_owned(),
-                        vec![
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("dotted black".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                            TreeNode::new("faded blue".to_owned(), vec![]),
-                        ],
-                    ),
-                ],
-            )],
-        );
-        static ref DOTTED_BLACK: TreeNode<String> =
-            TreeNode::new("dotted black".to_owned(), vec![]);
-    }
-
     #[test]
     fn should_find_node_in_tree() {
-        assert_eq!(BRIGHT_WHITE_TREE.contains(&"shiny gold".to_owned()), true);
+        assert_eq!(
+            contains(&parse_day7(EXAMPLE_INPUT), "bright white", "shiny gold"),
+            true
+        );
     }
 
     #[test]
     fn should_not_find_node_in_tree() {
-        assert_eq!(DOTTED_BLACK.contains(&"shiny gold".to_owned()), false);
+        assert_eq!(
+            contains(&parse_day7(EXAMPLE_INPUT), "dotted black", "shiny gold"),
+            false
+        );
     }
 
     #[test]
     fn should_solve_part1_example() {
         assert_eq!(solve_day7_part1(&parse_day7(EXAMPLE_INPUT)), 4);
+    }
+
+    #[test]
+    fn should_solve_part2_example1() {
+        let parsed = parse_day7(EXAMPLE_INPUT);
+        assert_eq!(solve_day7_part2(&parsed), 32);
+    }
+
+    const EXAMPLE_2_INPUT: &str = "shiny gold bags contain 2 dark red bags.
+dark red bags contain 2 dark orange bags.
+dark orange bags contain 2 dark yellow bags.
+dark yellow bags contain 2 dark green bags.
+dark green bags contain 2 dark blue bags.
+dark blue bags contain 2 dark violet bags.
+dark violet bags contain no other bags.";
+
+    #[test]
+    fn should_solve_part2_example2() {
+        let parsed = parse_day7(EXAMPLE_2_INPUT);
+        assert_eq!(solve_day7_part2(&parsed), 126);
     }
 }
