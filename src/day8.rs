@@ -7,9 +7,10 @@ use itertools::Itertools;
 enum Instruction {
     Accumulator(i32),
     Jump(i32),
-    NoOp,
+    NoOp(i32),
 }
 
+#[derive(Debug)]
 struct GameConsole {
     instructions: Vec<Instruction>,
     instruction_pointer: usize,
@@ -27,6 +28,19 @@ impl GameConsole {
         }
     }
 
+    fn execute_with_loop_protection(&mut self) {
+        let mut visited_instructions = HashSet::<usize>::new();
+        self.execute(&mut |c| {
+            if visited_instructions.contains(&c.instruction_pointer) {
+                return true;
+            }
+
+            visited_instructions.insert(c.instruction_pointer);
+
+            false
+        });
+    }
+
     fn execute(&mut self, callback: &mut dyn FnMut(&Self) -> bool) {
         while self.instruction_pointer < self.instructions_size {
             match self.instructions[self.instruction_pointer] {
@@ -41,7 +55,7 @@ impl GameConsole {
                         self.instruction_pointer -= value.abs() as usize;
                     }
                 }
-                Instruction::NoOp => {
+                Instruction::NoOp(_) => {
                     self.instruction_pointer += 1;
                 }
             }
@@ -64,7 +78,7 @@ fn parse_day8(input: &str) -> Vec<Instruction> {
             match op {
                 "acc" => Instruction::Accumulator(value),
                 "jmp" => Instruction::Jump(value),
-                "nop" => Instruction::NoOp,
+                "nop" => Instruction::NoOp(value),
                 _ => panic!("Unsupported instruction"),
             }
         })
@@ -74,17 +88,37 @@ fn parse_day8(input: &str) -> Vec<Instruction> {
 #[aoc(day8, part1)]
 fn solve_day8_part1(input: &[Instruction]) -> i32 {
     let mut console = GameConsole::new(input.to_vec());
-    let mut visited_instructions = HashSet::<usize>::new();
-    console.execute(&mut |c| {
-        if visited_instructions.contains(&c.instruction_pointer) {
-            return true;
-        }
-
-        visited_instructions.insert(c.instruction_pointer);
-
-        false
-    });
+    console.execute_with_loop_protection();
     console.accumulator
+}
+
+#[aoc(day8, part2)]
+fn solve_day8_part2(input: &[Instruction]) -> i32 {
+    input
+        .iter()
+        .enumerate()
+        .map(|(idx, i)| {
+            let flipped = match i {
+                Instruction::Jump(value) => Instruction::NoOp(*value),
+                Instruction::NoOp(value) => Instruction::Jump(*value),
+                Instruction::Accumulator(_) => return None,
+            };
+            if let Instruction::Accumulator(_) = i {
+                return None;
+            }
+            let mut instructions = input.to_vec();
+            instructions[idx] = flipped;
+            let mut console = GameConsole::new(instructions);
+            console.execute_with_loop_protection();
+            if console.instruction_pointer == console.instructions_size {
+                Some(console.accumulator)
+            } else {
+                None
+            }
+        })
+        .filter(|i| i.is_some())
+        .collect::<Vec<_>>()[0]
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -106,7 +140,7 @@ acc +6";
         assert_eq!(
             parse_day8(EXAMPLE_INPUT),
             vec![
-                Instruction::NoOp,
+                Instruction::NoOp(0),
                 Instruction::Accumulator(1),
                 Instruction::Jump(4),
                 Instruction::Accumulator(3),
@@ -122,5 +156,10 @@ acc +6";
     #[test]
     fn should_solve_part1_example() {
         assert_eq!(solve_day8_part1(&parse_day8(EXAMPLE_INPUT)), 5);
+    }
+
+    #[test]
+    fn should_solve_part2_example() {
+        assert_eq!(solve_day8_part2(&parse_day8(EXAMPLE_INPUT)), 8);
     }
 }
