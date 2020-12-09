@@ -31,6 +31,28 @@ fn solve_day9_part1(input: &[u64]) -> u64 {
     first_not_valid(input, 25).unwrap()
 }
 
+fn encryption_weakness(input: &[u64], subject: u64) -> Option<u64> {
+    for start in 0..input.len() {
+        for end in start..input.len() {
+            let sum = input[start..end].iter().sum::<u64>();
+            if sum == subject {
+                let range_sorted = input[start..end].iter().sorted().collect::<Vec<_>>();
+                return Some(range_sorted[0] + range_sorted[range_sorted.len() - 1]);
+            }
+            if sum > subject {
+                break;
+            }
+        }
+    }
+    None
+}
+
+#[aoc(day9, part2)]
+fn solve_day9_part2(input: &[u64]) -> u64 {
+    let subject = first_not_valid(input, 25).unwrap();
+    encryption_weakness(input, subject).unwrap()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,5 +83,13 @@ mod tests {
         let input = parse_day9(EXAMPLE_INPUT);
 
         assert_eq!(first_not_valid(&input, 5), Some(127))
+    }
+
+    #[test]
+    fn should_solve_part2_example() {
+        let input = parse_day9(EXAMPLE_INPUT);
+        let subject = first_not_valid(&input, 5).unwrap();
+
+        assert_eq!(encryption_weakness(&input, subject), Some(62));
     }
 }
