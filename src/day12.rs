@@ -25,6 +25,7 @@ struct Point(i32, i32);
 struct Ship {
     location: Point,
     direction: Direction,
+    waypoint: Point,
 }
 
 impl Default for Ship {
@@ -32,12 +33,13 @@ impl Default for Ship {
         Ship {
             location: Point(0, 0),
             direction: Direction::East,
+            waypoint: Point(10, 1),
         }
     }
 }
 
 impl Ship {
-    fn process_instruction(&mut self, instruction: &Instruction) {
+    fn process_instruction_part1(&mut self, instruction: &Instruction) {
         match instruction {
             Instruction::North(amount) => {
                 self.move_in_direction(*amount, Direction::North);
@@ -122,6 +124,72 @@ impl Ship {
             Direction::West => self.location.0 -= amount,
         }
     }
+
+    fn move_waypoint_in_direction(&mut self, amount: i32, direction: Direction) {
+        match direction {
+            Direction::North => self.waypoint.1 += amount,
+            Direction::South => self.waypoint.1 -= amount,
+            Direction::East => self.waypoint.0 += amount,
+            Direction::West => self.waypoint.0 -= amount,
+        }
+    }
+
+    fn process_instruction_part2(&mut self, instruction: &Instruction) {
+        match instruction {
+            Instruction::North(amount) => {
+                self.move_waypoint_in_direction(*amount, Direction::North);
+            }
+            Instruction::South(amount) => {
+                self.move_waypoint_in_direction(*amount, Direction::South);
+            }
+            Instruction::East(amount) => {
+                self.move_waypoint_in_direction(*amount, Direction::East);
+            }
+            Instruction::West(amount) => {
+                self.move_waypoint_in_direction(*amount, Direction::West);
+            }
+            Instruction::Left(amount) => match amount {
+                90 => {
+                    let (tmp_x, tmp_y) = (self.waypoint.0, self.waypoint.1);
+                    self.waypoint.0 = -tmp_y;
+                    self.waypoint.1 = tmp_x;
+                }
+                180 => {
+                    self.waypoint.0 = -self.waypoint.0;
+                    self.waypoint.1 = -self.waypoint.1;
+                }
+                270 => {
+                    let (tmp_x, tmp_y) = (self.waypoint.0, self.waypoint.1);
+                    self.waypoint.0 = tmp_y;
+                    self.waypoint.1 = -tmp_x;
+                }
+                _ => panic!("Invalid degree amount"),
+            },
+            Instruction::Right(amount) => match amount {
+                90 => {
+                    let (tmp_x, tmp_y) = (self.waypoint.0, self.waypoint.1);
+                    self.waypoint.0 = tmp_y;
+                    self.waypoint.1 = -tmp_x;
+                }
+                180 => {
+                    self.waypoint.0 = -self.waypoint.0;
+                    self.waypoint.1 = -self.waypoint.1;
+                }
+                270 => {
+                    let (tmp_x, tmp_y) = (self.waypoint.0, self.waypoint.1);
+                    self.waypoint.0 = -tmp_y;
+                    self.waypoint.1 = tmp_x;
+                }
+                _ => panic!("Invalid degree amount"),
+            },
+            Instruction::Forward(times) => {
+                for _ in 0..*times {
+                    self.location.0 += self.waypoint.0;
+                    self.location.1 += self.waypoint.1;
+                }
+            }
+        }
+    }
 }
 
 fn manhattan_distance(a: &Point, b: &Point) -> i32 {
@@ -157,8 +225,18 @@ fn parse_day12(input: &str) -> Vec<Instruction> {
 fn solve_day12_part1(input: &[Instruction]) -> i32 {
     let mut ship = Ship::default();
     for instruction in input {
-        ship.process_instruction(instruction);
-        //dbg!(&ship);
+        ship.process_instruction_part1(instruction);
+    }
+
+    manhattan_distance(&Point(0, 0), &ship.location)
+}
+
+#[aoc(day12, part2)]
+fn solve_day12_part2(input: &[Instruction]) -> i32 {
+    let mut ship = Ship::default();
+
+    for instruction in input {
+        ship.process_instruction_part2(instruction);
     }
 
     manhattan_distance(&Point(0, 0), &ship.location)
@@ -196,5 +274,10 @@ F11";
     #[test]
     fn should_solve_part1_example() {
         assert_eq!(solve_day12_part1(&parse_day12(EXAMPLE1)), 25)
+    }
+
+    #[test]
+    fn should_solve_part2_example() {
+        assert_eq!(solve_day12_part2(&parse_day12(EXAMPLE1)), 286)
     }
 }
