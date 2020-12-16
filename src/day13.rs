@@ -1,14 +1,14 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use itertools::Itertools;
+use itertools::{izip, Itertools};
 
 #[derive(PartialEq, Debug)]
 enum BusFrequency {
     OutOfService,
-    InService(u64),
+    InService(i64),
 }
 
 #[aoc_generator(day13)]
-fn parse_day13(input: &str) -> (u64, Vec<BusFrequency>) {
+fn parse_day13(input: &str) -> (i64, Vec<BusFrequency>) {
     let (departure, buses) = input.lines().collect_tuple().unwrap();
     (
         departure.parse().unwrap(),
@@ -18,14 +18,14 @@ fn parse_day13(input: &str) -> (u64, Vec<BusFrequency>) {
                 if b == "x" {
                     BusFrequency::OutOfService
                 } else {
-                    BusFrequency::InService(b.parse::<u64>().unwrap())
+                    BusFrequency::InService(b.parse::<i64>().unwrap())
                 }
             })
             .collect(),
     )
 }
 
-fn earliest_departure(min_departure: u64, frequency: u64) -> u64 {
+fn earliest_departure(min_departure: i64, frequency: i64) -> i64 {
     let ed = (min_departure / frequency) * frequency;
 
     if min_departure % frequency == 0 {
@@ -33,16 +33,10 @@ fn earliest_departure(min_departure: u64, frequency: u64) -> u64 {
     } else {
         ed + frequency
     }
-
-    // let mut state = 0;
-    // while state < min_departure {
-    //     state += frequency;
-    // }
-    // state
 }
 
 #[aoc(day13, part1)]
-fn solve_day13_part1(input: &(u64, Vec<BusFrequency>)) -> u64 {
+fn solve_day13_part1(input: &(i64, Vec<BusFrequency>)) -> i64 {
     let min_departure = input.0;
     let (bus, departure) = input
         .1
@@ -62,34 +56,54 @@ fn solve_day13_part1(input: &(u64, Vec<BusFrequency>)) -> u64 {
 }
 
 #[aoc(day13, part2)]
-fn solve_day13_part2(input: &(u64, Vec<BusFrequency>)) -> u64 {
-    let first = match input.1[0] {
-        BusFrequency::OutOfService => {
-            panic!("Invalid input - found OutOfService for first")
-        }
-        BusFrequency::InService(f) => f,
-    };
-    let mut cursor = first;
-    loop {
-        let mut found_mismatch = false;
-        for (idx, b) in input.1.iter().enumerate().skip(1) {
-            match b {
-                BusFrequency::OutOfService => {
-                    continue;
-                }
-                BusFrequency::InService(f) => {
-                    if earliest_departure(cursor, *f) != cursor + idx as u64 {
-                        found_mismatch = true;
-                        break;
-                    }
-                }
+fn solve_day13_part2(input: &(i64, Vec<BusFrequency>)) -> i64 {
+    let ids = input
+        .1
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, b)| {
+            if let BusFrequency::InService(id) = b {
+                Some((idx as i64, *id))
+            } else {
+                None
             }
-        }
-        if !found_mismatch {
-            return cursor;
-        }
-        cursor += first;
+        })
+        .collect::<Vec<_>>();
+
+    ids.iter().map(|(_, m)| m).product::<i64>() - crt(&ids)
+}
+
+fn egcd(a: i64, b: i64) -> (i64, i64, i64) {
+    if a == 0 {
+        (b, 0, 1)
+    } else {
+        let (g, x, y) = egcd(b % a, a);
+        (g, y - (b / a) * x, x)
     }
+}
+
+fn mod_inv(x: i64, n: i64) -> i64 {
+    let (_, x, _) = egcd(x, n);
+    (x % n + n) % n
+}
+
+fn crt(input: &[(i64, i64)]) -> i64 {
+    let sum_modulos = input.iter().map(|b| b.1).product::<i64>();
+    let ns = input
+        .iter()
+        .map(|(_, m)| sum_modulos / m)
+        .collect::<Vec<_>>();
+
+    let xs = ns
+        .iter()
+        .zip(input)
+        .map(|(n, (_, m))| mod_inv(*n, *m))
+        .collect::<Vec<_>>();
+
+    izip!(xs, ns, input)
+        .map(|(x, n, (b, _))| x * n * b)
+        .sum::<i64>()
+        % sum_modulos
 }
 
 #[cfg(test)]
